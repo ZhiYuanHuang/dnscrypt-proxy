@@ -59,18 +59,17 @@ func (plugin *PluginForward) Init(proxy *Proxy) error {
 			continue
 		}
 
-		if Strings.HasPrefix(domain,"!"){
+		if strings.HasPrefix(domain,"!") {
 			
-			domain=domain[1:(len(domain)-1)]
+			domain=domain[1:len(domain)]
 			plugin.forwardNotInMap = append(plugin.forwardNotInMap, PluginForwardEntry{
 				domain:  domain,
-				servers: servers
+				servers: servers,
 			})
-		}
-		else{
+		} else {
 			plugin.forwardMap = append(plugin.forwardMap, PluginForwardEntry{
 				domain:  domain,
-				servers: servers
+				servers: servers,
 			})
 		}
 		
@@ -90,7 +89,7 @@ func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) erro
 	qName := pluginsState.qName
 	qNameLen := len(qName)
 	var servers []string
-	bool qNameInForwardMap=false
+    qNameInForwardMap:=false
 	for _, candidate := range plugin.forwardMap {
 		candidateLen := len(candidate.domain)
 		if candidateLen > qNameLen {
@@ -105,7 +104,7 @@ func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) erro
 	}
 
 	if !qNameInForwardMap && len(plugin.forwardNotInMap)>0 {
-		bool qNameInForwardNotInMap=false
+	    qNameInForwardNotInMap:=false
 		for _, candidate := range plugin.forwardNotInMap {
 			candidateLen := len(candidate.domain)
 			if candidateLen > qNameLen {
@@ -122,7 +121,7 @@ func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) erro
 		    var randServersIndex=rand.Intn(len(plugin.forwardNotInMap)*100)%len(plugin.forwardNotInMap)
 			servers=plugin.forwardNotInMap[randServersIndex].servers
 		}
-	}
+	} 
 
 	if len(servers) == 0 {
 		return nil
