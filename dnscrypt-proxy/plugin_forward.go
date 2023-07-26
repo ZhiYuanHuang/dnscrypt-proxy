@@ -17,6 +17,7 @@ type PluginForwardEntry struct {
 
 type PluginForward struct {
 	forwardMap []PluginForwardEntry
+	forwardNotInMap []PluginForwardEntry
 }
 
 func (plugin *PluginForward) Name() string {
@@ -57,10 +58,22 @@ func (plugin *PluginForward) Init(proxy *Proxy) error {
 		if len(servers) == 0 {
 			continue
 		}
-		plugin.forwardMap = append(plugin.forwardMap, PluginForwardEntry{
-			domain:  domain,
-			servers: servers,
-		})
+
+		if Strings.HasPrefix(domain,"!"){
+			
+			domain=domain[1:(len(domain)-1)]
+			plugin.forwardNotInMap = append(plugin.forwardNotInMap, PluginForwardEntry{
+				domain:  domain,
+				servers: servers
+			})
+		}
+		else{
+			plugin.forwardMap = append(plugin.forwardMap, PluginForwardEntry{
+				domain:  domain,
+				servers: servers
+			})
+		}
+		
 	}
 	return nil
 }
@@ -77,6 +90,7 @@ func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) erro
 	qName := pluginsState.qName
 	qNameLen := len(qName)
 	var servers []string
+	bool qNameInForwardMap=false
 	for _, candidate := range plugin.forwardMap {
 		candidateLen := len(candidate.domain)
 		if candidateLen > qNameLen {
@@ -85,9 +99,31 @@ func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) erro
 		if qName[qNameLen-candidateLen:] == candidate.domain &&
 			(candidateLen == qNameLen || (qName[qNameLen-candidateLen-1] == '.')) {
 			servers = candidate.servers
+			qNameInForwardMap=true
 			break
 		}
 	}
+
+	if !qNameInForwardMap && len(plugin.forwardNotInMap)>0 {
+		bool qNameInForwardNotInMap=false
+		for _, candidate := range plugin.forwardNotInMap {
+			candidateLen := len(candidate.domain)
+			if candidateLen > qNameLen {
+				continue
+			}
+			if qName[qNameLen-candidateLen:] == candidate.domain &&
+				(candidateLen == qNameLen || (qName[qNameLen-candidateLen-1] == '.')) {
+				
+				qNameInForwardNotInMap=true
+				break
+			}
+		}
+		if !qNameInForwardNotInMap {
+		    var randServersIndex=rand.Intn(len(plugin.forwardNotInMap)*100)%len(plugin.forwardNotInMap)
+			servers=plugin.forwardNotInMap[randServersIndex].servers
+		}
+	}
+
 	if len(servers) == 0 {
 		return nil
 	}
