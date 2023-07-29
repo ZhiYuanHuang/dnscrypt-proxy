@@ -1,3 +1,38 @@
+#My feature
+
+_Some features I wrote, but I think it's not enough to feed back upstream._
+
+THere is:
+
+* Add domain with a prefix of symbol (!) to forwarding-rules,it instructs the query domain will be forwarded to dns when the query name not match the config domain。We call it 'NonPattern-forwarding'
+
+  There is Some Tips:
+
+  + the feature are a lower priority,it instructs if the origin forwarding-rules match,the feature will be useless
+  + If there are several 'NonPattern-forwarding',the query domain will be forwarded only itn't match all config domain.And the selected dns is random every time.
+
+  the forwarding-rules file like that:
+
+  ```
+  baidu.com  114.114.114.114
+  456.com 114.114.114.114
+  !123.com 114.114.114.114
+  !456.com 8.8.8.8
+  !789.com 1.1.1.1
+  ```
+
+  the forwarding result:
+
+  ```
+  queryname: baidu.com   result: forward-114.114.114.114 (because it match origin rule)
+  queryname: 123.com     result: noforward (because it not macth 'NonPattern-forwarding')
+  queryname: 111.com     reuslt: forward-random of ['114.114.114.114','8.8.8.8','1.1.1.1'] (because it match 'NonPattern-forwarding')
+  queryname: 789.com     result: noforward (because it not macth 'NonPattern-forwarding')
+  queryname: 456.com     result: forward-114.114.114.114 (because it macth origin rule ,and origin rule is priority)
+  ```
+
+
+
 # ![dnscrypt-proxy 2](https://raw.github.com/dnscrypt/dnscrypt-proxy/master/logo.png?3)
 
 [![Financial Contributors on Open Collective](https://opencollective.com/dnscrypt/all/badge.svg?label=financial+contributors)](https://opencollective.com/dnscrypt)
